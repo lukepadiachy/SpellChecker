@@ -1,0 +1,62 @@
+﻿@page "/spellcheck"
+@inject SpellChecker.Services.GeminiService geminiService
+
+@rendermode InteractiveServer
+
+<PageTitle>Spell Check</PageTitle>
+
+<div class="container">
+    <h1>Sentence Improvement</h1>
+    <div class="mb-3">
+        <label for="sentenceInput" class="form-label">Enter a sentence you would like to improve:</label>
+        <input type="text" class="form-control" id="sentenceInput" @bind="userSentence" placeholder="Type your sentence here" />
+    </div>
+    <button class="btn btn-primary" @onclick="ImproveSentence">Improve Sentence</button>
+
+    @if (!string.IsNullOrEmpty(correctedSentence))
+    {
+        <div class="mt-3">
+            <h2>Let's See:</h2>
+            <p>@(new MarkupString(Markdig.Markdown.ToHtml(correctedSentence)))</p>
+        </div>
+
+        @if (!IsSentenceCorrect())
+        {
+            <div class="mt-3">
+                <h2>How Was That?:</h2>
+                <p>@(new MarkupString(Markdig.Markdown.ToHtml(feedback)))</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private string userSentence;
+    private string correctedSentence;
+    private List<string> corrections;
+    private string feedback;
+
+    private async Task ImproveSentence()
+    {
+        if (string.IsNullOrWhiteSpace(userSentence))
+        {
+            // Handle empty input
+            return;
+        }
+
+        var response = await geminiService.ImproveSentenceAsync(userSentence);
+
+        correctedSentence = response.ImprovedSentence;
+        corrections = response.SpellingCorrections?.Any() == true ? response.SpellingCorrections.Select(c => $"* {c}").ToList() : null;
+
+        // Generate feedback based on the corrected sentence using API
+        feedback = IsSentenceCorrect() ? "The sentence is correct. There are no spelling errors." :
+                   await geminiService.GenerateFeedbackAsync(response.ImprovedSentence);
+    }
+
+    private bool IsSentenceCorrect()
+    {
+        // Determine if the sentence is correct based on your criteria
+        return corrections == null || corrections.Count == 0;
+    }
+}
