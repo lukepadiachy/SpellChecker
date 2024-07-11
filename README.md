@@ -32,6 +32,12 @@ https://www.nuget.org/packages/Mscc.GenerativeAI
 
 https://github.com/mscraftsman/generative-ai
 
+### Side Note
+
+- There might be a difference in responses
+
+
+
 
 
   
